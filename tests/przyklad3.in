@@ -1,0 +1,47 @@
+; czyta bit z wejscia na stos `a`
+I { $ { a+ } { a- } }
+
+; pisze na wyjscie bit ze stosu `b`
+O { b { $+ } { $- } }
+
+; czyta z wejscia ciag osmiobitowych znakow, zakonczony koncem wiersza
+; na stosie `n` zapisuje tyle bitow `1`, jak jest dlugosc tego ciagu
+C {
+  k+
+  I I I I I I I I
+  Z J Z J Z Z Z Z
+  k {
+    X X X X X X X X
+  } {
+    n+
+    C
+  }
+}
+
+; pisze na wyjscie tyle osmiobitowych znakow ze stosu `b`, ile jest
+; bitow `1` na stosie `n`; po ostatnim konczy wiersz
+P {
+  n {
+    O O O O O O O O
+    P
+  } {
+    $----+-+-
+  }
+}
+
+; kopiuje bit ze stosu `a` na stos `b`
+; jesli tym bitem jest `1`, to zeruje bit na stosie `k`
+Z { a { K b+ } { b- } }
+
+; kopiuje bit ze stosu `a` na stos `b`
+; jesli tym bitem jest `0`, to zeruje bit na stosie `k`
+J { a { b+ } { K b- } }
+
+; zmienia bit na stosie `k` na `0`
+K { k { k- } { k- } }
+
+; kasuje bit ze stosu `b`
+X { b {} {} }
+
+; kopiuje wiersz z wejscia na wyjscie, odwracajac kolejnosc znakow
+{ n- C P }

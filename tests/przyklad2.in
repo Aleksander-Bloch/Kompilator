@@ -1,0 +1,42 @@
+; pisze `h` gdy na stosie `u` jest `1`, w przeciwnym przypadku pisze `H`
+; zmienia bit na stosie `u` na przeciwny
+H { a---+ X }
+
+; pisze `e` gdy na stosie `u` jest `1`, w przeciwnym przypadku pisze `E`
+; zmienia bit na stosie `u` na przeciwny
+E { a+-+- X }
+
+; pisze `l` gdy na stosie `u` jest `1`, w przeciwnym przypadku pisze `L`
+; zmienia bit na stosie `u` na przeciwny
+L { a--++ X }
+
+; pisze `o` gdy na stosie `u` jest `1`, w przeciwnym przypadku pisze `O`
+; zmienia bit na stosie `u` na przeciwny
+O { a++++ X }
+
+; pisze znak, którego dwa najbardziej znaczace bity to `0` i `1`, kolejny
+; bit jest na stosie `u`, nastepnym jest `0` a pozostale cztery sa na
+; stosie `a`, jednoczesnie zmienia bit na stosie `u` na przeciwny
+X {
+  $ -+
+  u {
+    u -
+    $ +
+  } {
+    u +
+    $ -
+  }
+  $ -
+  Y Y Y Y
+}
+
+; pisze bit ze stosu `a`
+Y { a { $+ } { $- } }
+
+; pisze dwa razy "hello", przelaczajac wielkosc liter
+{
+  u -
+  H E L L O
+  H E L L O
+  $ ----+-+-
+}

@@ -1,0 +1,18 @@
+; pisze gwiazdke
+G { $--+-+-+- }
+
+; konczy wiersz
+N { $----+-+- }
+
+; kopiuje bity `1` ze stosu `a` na `b`
+K { a { b+ K } { a- } }
+
+; pisze tyle gwiazdek, ile jest bitow `1` na stosie `b`
+; jednoczesnie kopiuje te bity na stos `a`
+H { G b { a+ H } { b- } }
+
+; pisze wiersz z gwiazdkami, ktorego dlugosc jest na `a`
+P { a { K H N P } { a- } }
+
+; pisze trojkat z gwiazdek, majacy bok dlugosci `20`
+{ a-++++++++++ b- P }
