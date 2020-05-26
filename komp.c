@@ -64,12 +64,18 @@ int* proc_ad, int* main_ad) {
     int i, token;
     // flag to indicate the source of bits
     int use_stack, stack_num;
+    // depth of nested parentheses expr
+    int nested_depth = 0;
 
 
     // initializing the inst_arr with jump to main
     inst_t* inst_arr = (inst_t*)malloc(sizeof(inst_t));
     inst_arr[0].type = JUMP;
 
+    /*
+        TODO: fix iterator so that it represents number of instructions not characters read
+        discard chars that are part of comments or white spaces by decrementing iterator
+    */
 
     // translating tokens into instructions in vm code
     for(int i = 1; (token = getchar()) != EOF; ++i) {
@@ -88,22 +94,45 @@ int* proc_ad, int* main_ad) {
             use_stack = 0;
         }
         // processing tokens according to mode
-        else if(use_stack) {
-            if(token == '-')
+        else if(token == '-') {
+            if(use_stack) {
                 inst_arr[i].type = PUSH_0;
-            else
-                inst_arr[i].type = PUSH_1;
-
-            inst_arr[i].stack = stack_num;
-        }
-        else {
-            if(token == '-')
+                inst_arr[i].stack = stack_num;
+            }
+            else {
                 inst_arr[i].type = OUTPUT_0;
-            else
+            }
+            (*inst_num)++;
+        }
+        else if(token == '+') {
+            if(use_stack) {
+                inst_arr[i].type = PUSH_1;
+                inst_arr[i].stack = stack_num;
+            }
+            else {
                 inst_arr[i].type = OUTPUT_1;
-            
-            inst_arr[i].stack = stack_num;
+            }
+            (*inst_num)++;
+        }
+        else if(token == '{') {
+            nested_depth++;
+        }
+        else if(token == '}') {
+            nested_depth--;
+            if(nested_depth == 0) {
+                inst_arr[i].type = RETURN;
+                (*inst_num)++;
+            }
+        }
+        else if(token >= 'A' && token <= 'Z') {
+            if(nested_depth == 0) {
+                proc_ad[token - 'A'] = *inst_num;
+            }
+            else {
+                inst_arr[i].type = CALL;
+                inst_arr[i].address = proc_ad[token - 'A'];
+                (*inst_num)++;
+            }
         }
     }
-    *inst_num = i;
 }
