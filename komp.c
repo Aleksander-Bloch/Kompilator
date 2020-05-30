@@ -35,6 +35,18 @@ typedef struct inst_template {
     int stack;
 }inst_t;
 
+typedef struct choice_template {
+    // flag for distinguishing between if and else statements
+    int occurred_cond;
+    int* address_else;
+}choice_t;
+
+typedef struct choice_array {
+    int capacity;
+    int choice_num;
+    choice_t* proc_choices;
+}choice_arr;
+
 /*
 PRECOMPILATION
 - creates array of instructions
@@ -42,7 +54,8 @@ PRECOMPILATION
 - creates array of addresses for choice instructions
 - returns array of pointers (inst and choice_add array)
 */
-inst_t* precompile(int* inst_num, int proc_ad[], int* main_ad);
+inst_t* precompile(int* inst_num, int proc_ad[], int* main_ad,
+choice_arr proc_cond[], int* proc_cond_num);
 
 int main() {
     // lists addresses of procedures named A-Z
@@ -51,7 +64,15 @@ int main() {
     int main_ad = 0;
     // size of inst and choice_add array on heap
     int inst_num = 0;
-    inst_t* inst_arr = precompile(&inst_num, proc_ad, &main_ad);
+
+    // array of arrays of choices for every procedure
+    choice_arr proc_cond[27] = {{0, 0, NULL}};
+
+    // number of procedures with conditionals
+    int proc_cond_num = 0;
+
+
+    inst_t* inst_arr = precompile(&inst_num, proc_ad, &main_ad, proc_cond, &proc_cond_num);
     inst_arr[0].address = main_ad;
     inst_arr[inst_num].type = HALT;
 
@@ -72,7 +93,8 @@ int main() {
     return 0;
 }
 
-inst_t* precompile(int* inst_num, int proc_ad[], int* main_ad) {
+inst_t* precompile(int* inst_num, int proc_ad[], int* main_ad,
+choice_arr proc_cond[], int* proc_cond_num) {
     // capacity of inst_arr
     int capacity = 1;
     // ith item, token value
@@ -85,6 +107,10 @@ inst_t* precompile(int* inst_num, int proc_ad[], int* main_ad) {
     int comment = 0;
     // whether expr is part of procedure definition
     int def = 0;
+    // current procedure name
+    char proc_name;
+    // recognition of procedure with conditionals
+    int has_cond = 0;
 
 
     // initializing the inst_arr with jump to main
@@ -144,17 +170,37 @@ inst_t* precompile(int* inst_num, int proc_ad[], int* main_ad) {
             }
         }
         else if(token == '{') {
-            if(nested_depth == 0 && !def) {
-                *main_ad = i;
-            }
             nested_depth++;
-            i--;
+            if(nested_depth == 1 && !def) {
+                *main_ad = i;
+                i--;
+            }
+            else if(nested_depth > 1) {
+                if(!has_cond) {
+                    has_cond = 1;
+                    (*proc_cond_num)++;
+                }
+                if(use_stack) {
+                    inst_arr[i].type = POP_BRANCH;
+                    inst_arr[i].stack = stack_num;
+                }
+                else {
+                    inst_arr[i].type = INPUT_BRANCH;
+                }
+            }
+            else {
+                i--;
+            }
+            
         }
         else if(token == '}') {
             nested_depth--;
-            if(nested_depth == 0 && def) {
-                def = 0;
-                inst_arr[i].type = RETURN;
+            if(nested_depth == 0) {
+                has_cond = 0;
+                if(def) {
+                    def = 0;
+                    inst_arr[i].type = RETURN;
+                }
             }
             else {
                 i--;
@@ -164,11 +210,16 @@ inst_t* precompile(int* inst_num, int proc_ad[], int* main_ad) {
             if(nested_depth == 0) {
                 proc_ad[token - 'A'] = i;
                 def = 1;
+                proc_name = token;
                 i--;
             }
             else {
                 inst_arr[i].type = CALL;
                 inst_arr[i].address = proc_ad[token - 'A'];
+                // TODO: add function that enlarges the capacity
+                if(token == proc_name) {
+                    inst_arr[++i].type = JUMP;
+                }
             }
         }
     }
